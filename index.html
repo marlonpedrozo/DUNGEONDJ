@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dungeon DJ</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background: #121212; color: #fff; font-family: Arial, sans-serif; }
+    h1 { font-weight: bold; color: #f5f5f5; }
+
+    /* Botões de som */
+    .sound-btn {
+      width: 150px; height: 80px;
+      margin: 10px; font-size: 18px;
+      border-radius: 14px; transition: 0.3s;
+      background: linear-gradient(145deg, #2e2e2e, #1a1a1a);
+      color: #fff; border: none;
+      box-shadow: 2px 2px 6px rgba(0,0,0,0.6);
+    }
+    .sound-btn:hover {
+      transform: translateY(-4px) scale(1.05);
+      box-shadow: 0px 4px 15px rgba(0,255,150,0.6);
+    }
+
+    /* Player */
+    .player-card {
+      background: #1e1e1e;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 12px;
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+      text-align: left;
+      cursor: grab;
+    }
+    .player-card.dragging { opacity: 0.5; }
+    .player-card.ambiente { border-left: 6px solid #28a745; }
+    .player-card.combate { border-left: 6px solid #dc3545; }
+
+    .player-controls button { margin-right: 5px; }
+
+    /* Lista lateral */
+    #musicListContainer {
+      display: none;
+      position: absolute;
+      top: 100px; left: 20px;
+      width: 250px; max-height: 500px;
+      overflow-y: auto;
+      background: #1c1c1c;
+      padding: 12px;
+      border-radius: 10px;
+      box-shadow: 0px 4px 10px rgba(0,0,0,0.7);
+    }
+
+    /* Botões de adicionar música */
+    .add-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 8px;
+      margin: 5px;
+    }
+
+    /* Lançador de dados */
+    .dice-container {
+      margin-top: 30px;
+    }
+    .dice-btn {
+      background: linear-gradient(145deg, #3a3a3a, #222);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 18px;
+      margin: 8px;
+      font-size: 18px;
+      transition: 0.3s;
+      box-shadow: 2px 2px 6px rgba(0,0,0,0.6);
+    }
+    .dice-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0px 4px 15px rgba(0,150,255,0.6);
+    }
+    .dice-result {
+      font-size: 24px;
+      font-weight: bold;
+      margin-top: 15px;
+      animation: pop 0.6s ease;
+    }
+    @keyframes pop {
+      0% { transform: scale(0.2); opacity: 0; }
+      50% { transform: scale(1.4); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body class="text-center p-4">
+
+  <h1 class="mb-4">🎼 DUNGEON DJ 🎲</h1>
+
+  <!-- Seleção de categoria -->
+  <div class="mb-4">
+    <button class="btn btn-success me-2" onclick="setCategory('ambiente')">🎶 Ambiente</button>
+    <button class="btn btn-danger me-2" onclick="setCategory('combate')">⚔️ Combate</button>
+    <button class="btn btn-warning" onclick="toggleList()">📜 Lista</button>
+  </div>
+
+  <!-- Botões de som -->
+  <div class="d-flex flex-wrap justify-content-center" id="buttonsContainer"></div>
+
+  <!-- Controles extras -->
+  <div class="mt-4">
+    <label class="btn btn-primary add-btn">
+      📂 Adicionar Arquivo
+      <input type="file" id="fileInput" accept="audio/*" hidden onchange="loadLocalFile(event)">
+    </label>
+    <div class="input-group mb-3 mt-2 w-50 mx-auto">
+      <input type="text" id="urlInput" placeholder="Cole o link da música" class="form-control">
+      <button class="btn btn-info" onclick="loadFromURL()">🌐 Adicionar Link</button>
+    </div>
+  </div>
+
+  <!-- Lista lateral -->
+  <div id="musicListContainer">
+    <h5>📜 Lista de Músicas</h5>
+    <div id="musicList"></div>
+  </div>
+
+  <!-- 🎲 Lançador de Dados -->
+  <div class="dice-container">
+    <h3>🎲 Lançador de Dados</h3>
+    <div>
+      <button class="dice-btn" onclick="rollDice(4)">🎲 d4</button>
+      <button class="dice-btn" onclick="rollDice(6)">🎲 d6</button>
+      <button class="dice-btn" onclick="rollDice(8)">🎲 d8</button>
+      <button class="dice-btn" onclick="rollDice(10)">🎲 d10</button>
+      <button class="dice-btn" onclick="rollDice(12)">🎲 d12</button>
+      <button class="dice-btn" onclick="rollDice(20)">🎲 d20</button>
+    </div>
+    <div id="diceResult" class="dice-result"></div>
+  </div>
+  
+
+  <script>
+    let currentCategory = 'ambiente';
+    let sounds = { ambiente: [], combate: [] };
+    let buttons = [];
+    let dragSrc = null;
+
+    // Criar 9 botões
+    const container = document.getElementById("buttonsContainer");
+    for (let i = 1; i <= 9; i++) {
+      let btn = document.createElement("button");
+      btn.className = "sound-btn";
+      btn.innerText = "Som " + i;
+      btn.onclick = () => playSound(i - 1);
+      container.appendChild(btn);
+      buttons.push(btn);
+    }
+
+    function setCategory(cat) {
+      currentCategory = cat;
+      updateButtons();
+    }
+
+    function updateButtons() {
+      buttons.forEach((btn, i) => {
+        btn.innerText = sounds[currentCategory][i]?.name || "Som " + (i + 1);
+      });
+    }
+
+    function playSound(index) {
+      let sound = sounds[currentCategory][index];
+      if (sound) createPlayer(sound, index);
+    }
+
+    function loadLocalFile(event) {
+      const file = event.target.files[0];
+      if (file) {
+        let url = URL.createObjectURL(file);
+        addSound(file.name, url);
+      }
+    }
+
+    function loadFromURL() {
+      const url = document.getElementById("urlInput").value;
+      if (url) {
+        addSound("Música Link", url);
+        document.getElementById("urlInput").value = "";
+      }
+    }
+
+    function addSound(name, src) {
+      if (sounds[currentCategory].length < 9) {
+        sounds[currentCategory].push({ name, src, category: currentCategory });
+        updateButtons();
+        renderList();
+      } else {
+        alert("Limite de 9 sons por categoria.");
+      }
+    }
+
+    function createPlayer(sound, index) {
+      const list = document.getElementById("musicList");
+      let card = document.createElement("div");
+      card.className = `player-card ${sound.category}`;
+      card.draggable = true;
+
+      let title = document.createElement("h6");
+      title.innerText = sound.name;
+
+      let audio = document.createElement("audio");
+      audio.src = sound.src;
+      audio.controls = false;
+      audio.autoplay = true;
+
+      let controls = document.createElement("div");
+      controls.className = "player-controls mt-2";
+
+      let playBtn = document.createElement("button");
+      playBtn.className = "btn btn-sm btn-light";
+      playBtn.innerText = "⏯";
+      playBtn.onclick = () => { audio.paused ? audio.play() : audio.pause(); };
+
+      let muteBtn = document.createElement("button");
+      muteBtn.className = "btn btn-sm btn-warning";
+      muteBtn.innerText = "🔇";
+      muteBtn.onclick = () => { audio.muted = !audio.muted; };
+
+      let loopBtn = document.createElement("button");
+      loopBtn.className = "btn btn-sm btn-info";
+      loopBtn.innerText = "🔁";
+      loopBtn.onclick = () => { audio.loop = !audio.loop; };
+
+      let removeBtn = document.createElement("button");
+      removeBtn.className = "btn btn-sm btn-danger";
+      removeBtn.innerText = "❌";
+      removeBtn.onclick = () => { card.remove(); };
+
+      let volume = document.createElement("input");
+      volume.type = "range";
+      volume.min = 0; volume.max = 1; volume.step = 0.1; volume.value = 1;
+      volume.oninput = () => { audio.volume = volume.value; };
+
+      controls.appendChild(playBtn);
+      controls.appendChild(muteBtn);
+      controls.appendChild(loopBtn);
+      controls.appendChild(removeBtn);
+      controls.appendChild(volume);
+
+      card.appendChild(title);
+      card.appendChild(controls);
+
+      card.addEventListener("dragstart", (e) => {
+        dragSrc = card;
+        card.classList.add("dragging");
+      });
+      card.addEventListener("dragend", () => {
+        card.classList.remove("dragging");
+      });
+      card.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        const dragging = document.querySelector(".dragging");
+        const container = document.getElementById("musicList");
+        const afterElement = getDragAfterElement(container, e.clientY);
+        if (afterElement == null) {
+          container.appendChild(dragging);
+        } else {
+          container.insertBefore(dragging, afterElement);
+        }
+      });
+
+      list.appendChild(card);
+    }
+
+    function getDragAfterElement(container, y) {
+      const elements = [...container.querySelectorAll(".player-card:not(.dragging)")];
+      return elements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+          return { offset: offset, element: child };
+        } else {
+          return closest;
+        }
+      }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    function renderList() {
+      const list = document.getElementById("musicList");
+      list.innerHTML = "";
+      sounds[currentCategory].forEach((s, i) => {
+        createPlayer(s, i);
+      });
+    }
+
+    function toggleList() {
+      const list = document.getElementById("musicListContainer");
+      list.style.display = list.style.display === "none" ? "block" : "none";
+    }
+
+    // 🎲 Função de rolagem de dados
+    function rollDice(sides) {
+      const result = Math.floor(Math.random() * sides) + 1;
+      const diceResult = document.getElementById("diceResult");
+      diceResult.innerText = `🎲 Resultado: ${result}`;
+      diceResult.classList.remove("pop");
+      void diceResult.offsetWidth; // reset animação
+      diceResult.classList.add("pop");
+    }
+  </script>
+</body>
+</html>
