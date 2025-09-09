@@ -1,315 +1,304 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dungeon DJ</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dungeon DJ + Escudo do Mestre</title>
   <style>
-    body { background: #121212; color: #fff; font-family: Arial, sans-serif; }
-    h1 { font-weight: bold; color: #f5f5f5; }
-
-    /* Botões de som */
-    .sound-btn {
-      width: 150px; height: 80px;
-      margin: 10px; font-size: 18px;
-      border-radius: 14px; transition: 0.3s;
-      background: linear-gradient(145deg, #2e2e2e, #1a1a1a);
-      color: #fff; border: none;
-      box-shadow: 2px 2px 6px rgba(0,0,0,0.6);
-    }
-    .sound-btn:hover {
-      transform: translateY(-4px) scale(1.05);
-      box-shadow: 0px 4px 15px rgba(0,255,150,0.6);
+    :root{
+      --bg: #121212;
+      --panel: #1e1e1e;
+      --muted: #2e2e2e;
+      --accent-amb: #28a745;
+      --accent-comb: #dc3545;
+      --glass: rgba(255,255,255,0.04);
+      --text: #ffffff;
+      --card-radius: 12px;
     }
 
-    /* Player */
-    .player-card {
-      background: #1e1e1e;
-      border-radius: 12px;
-      padding: 12px;
-      margin-bottom: 12px;
-      box-shadow: 2px 2px 8px rgba(0,0,0,0.5);
-      text-align: left;
-      cursor: grab;
+    *,*::before,*::after{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+      background:var(--bg);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      padding:0;
     }
-    .player-card.dragging { opacity: 0.5; }
-    .player-card.ambiente { border-left: 6px solid #28a745; }
-    .player-card.combate { border-left: 6px solid #dc3545; }
 
-    .player-controls button { margin-right: 5px; }
+    /* ---------------- HEADER ---------------- */
+    header{
+      width:100%;
+      max-width:1100px;
+      display:flex;
+      gap:16px;
+      align-items:center;
+      justify-content:space-between;
+      padding:20px;
+    }
+    header h1{margin:0;font-size:1.6rem;display:flex;gap:10px;align-items:center}
+    .controls {display:flex;gap:10px;flex-wrap:wrap}
+    .btn {
+      background:linear-gradient(145deg,var(--muted),#1a1a1a);
+      color:var(--text);
+      border:0;padding:8px 12px;
+      border-radius:10px;font-weight:600;
+      cursor:pointer;transition:transform .15s ease;
+      box-shadow:2px 2px 6px rgba(0,0,0,0.6);
+    }
+    .btn:active{transform:scale(0.92)}
+    .btn-success{box-shadow:0 6px 18px rgba(40,167,69,0.08)}
+    .btn-danger{box-shadow:0 6px 18px rgba(220,53,69,0.08)}
+    .btn-warning{box-shadow:0 6px 18px rgba(255,193,7,0.06)}
+    .btn-info{box-shadow:0 6px 18px rgba(13,202,240,0.06)}
 
-    /* Lista lateral */
-    #musicListContainer {
-      display: none;
-      position: absolute;
-      top: 100px; left: 20px;
-      width: 250px; max-height: 500px;
-      overflow-y: auto;
+    /* ---------------- LAYOUT ---------------- */
+    main{
+      width:100%;max-width:1100px;
+      display:grid;grid-template-columns: 1fr 340px;
+      gap:18px;align-items:start;padding:20px;
+    }
+
+    /* área de botões sons */
+    .sound-grid{
+      background:var(--panel);
+      border-radius:var(--card-radius);
+      padding:18px;
+      box-shadow:2px 2px 12px rgba(0,0,0,0.6);
+    }
+    .btn-grid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap:14px;justify-items:center;
+    }
+    .sound-btn{
+      width:150px;height:80px;
+      border-radius:14px;
+      background:linear-gradient(145deg,#2e2e2e,#1a1a1a);
+      color:var(--text);
+      border:0;cursor:pointer;
+      font-size:16px;
+      transition:transform .18s ease, box-shadow .18s ease;
+    }
+    .sound-btn:hover{
+      transform:translateY(-4px) scale(1.03);
+      box-shadow:0 6px 18px rgba(0,255,150,0.06);
+    }
+
+    /* painel lateral */
+    aside{
+      background:var(--panel);
+      border-radius:var(--card-radius);
+      padding:14px;
+      box-shadow:2px 2px 10px rgba(0,0,0,0.6);
+    }
+    .side-section{margin-bottom:14px}
+    label.file-btn{
+      display:inline-flex;gap:8px;align-items:center;
+      padding:8px 10px;border-radius:8px;
+      background:linear-gradient(145deg,#2a2a2a,#1b1b1b);
+      cursor:pointer;font-weight:600;
+    }
+    input[type="file"]{display:none}
+    .url-row{display:flex;gap:8px;margin-top:10px}
+    .url-row input[type="text"]{
+      flex:1;background:transparent;
+      border:1px solid rgba(255,255,255,0.06);
+      padding:8px;border-radius:6px;color:var(--text);
+    }
+
+    #musicList{
+      display:flex;flex-direction:column;gap:10px;
+      max-height:420px;overflow:auto;padding-right:6px;
+    }
+    .player-card{
+      background:var(--glass);border-radius:10px;padding:10px;
+      display:flex;flex-direction:column;gap:8px;
+      cursor:grab;border-left:6px solid transparent;
+    }
+    .player-card.ambiente{border-left-color:var(--accent-amb)}
+    .player-card.combate{border-left-color:var(--accent-comb)}
+    .player-top{display:flex;justify-content:space-between;align-items:center}
+    .player-top h6{margin:0;font-size:0.95rem}
+    .player-controls{display:flex;gap:6px;flex-wrap:wrap}
+    .player-controls button{
+      background:transparent;
+      border:1px solid rgba(255,255,255,0.07);
+      color:var(--text);padding:6px 8px;border-radius:6px;cursor:pointer;
+    }
+    .player-controls input[type="range"]{width:110px}
+
+    /* dados */
+    .dice{margin-top:16px;display:flex;flex-direction:column;gap:8px;align-items:center}
+    .dice-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+    .dice-btn{background:linear-gradient(145deg,#3a3a3a,#222);color:var(--text);border:0;border-radius:10px;padding:10px 14px;cursor:pointer}
+    .dice-result{font-size:20px;font-weight:700;min-height:28px}
+
+    /* ESCUDO DO MESTRE */
+    .escudo {
       background: #1c1c1c;
-      padding: 12px;
-      border-radius: 10px;
-      box-shadow: 0px 4px 10px rgba(0,0,0,0.7);
+      padding: 20px;
+      border-top: 3px solid #0f0;
+      margin-top:20px;
+      width:100%;max-width:1100px;
     }
+    .escudo h2 {color: #0f0;margin-bottom:10px}
+    .blocos {display:flex;flex-wrap:wrap;gap:15px}
+    .bloco {
+      background:#222;padding:10px;border-radius:10px;
+      width:250px;box-shadow:0 5px 10px rgba(0,0,0,0.5);
+    }
+    .bloco input.titulo{width:100%;margin-bottom:5px;border:none;border-radius:5px;font-weight:bold;text-align:center;padding:4px}
+    .bloco textarea{
+      width:100%;height:80px;background:#111;color:#fff;
+      border:none;border-radius:5px;padding:5px;resize:none;
+    }
+    .controles{display:flex;justify-content:space-between;margin-top:5px}
+    #addBloco{
+      background:#0f0;border:none;color:#111;
+      padding:8px 15px;border-radius:8px;cursor:pointer;
+      margin-top:10px;font-weight:bold;
+    }
+    #addBloco:active{transform:scale(0.95)}
 
-    /* Botões de adicionar música */
-    .add-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 10px 20px;
-      font-size: 16px;
-      border-radius: 8px;
-      margin: 5px;
-    }
-
-    /* Lançador de dados */
-    .dice-container {
-      margin-top: 30px;
-    }
-    .dice-btn {
-      background: linear-gradient(145deg, #3a3a3a, #222);
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      padding: 12px 18px;
-      margin: 8px;
-      font-size: 18px;
-      transition: 0.3s;
-      box-shadow: 2px 2px 6px rgba(0,0,0,0.6);
-    }
-    .dice-btn:hover {
-      transform: scale(1.1);
-      box-shadow: 0px 4px 15px rgba(0,150,255,0.6);
-    }
-    .dice-result {
-      font-size: 24px;
-      font-weight: bold;
-      margin-top: 15px;
-      animation: pop 0.6s ease;
-    }
-    @keyframes pop {
-      0% { transform: scale(0.2); opacity: 0; }
-      50% { transform: scale(1.4); opacity: 1; }
-      100% { transform: scale(1); }
+    /* responsivo */
+    @media(max-width:900px){
+      main{grid-template-columns:1fr}
+      aside{order:2}
+      .sound-grid{order:1}
+      header{flex-direction:column;align-items:flex-start}
     }
   </style>
 </head>
-<body class="text-center p-4">
+<body>
+  <header>
+    <h1>🎼 DUNGEON DJ</h1>
+    <nav class="controls">
+      <button class="btn btn-success" id="ambBtn">🎶 Ambiente</button>
+      <button class="btn btn-danger" id="combBtn">⚔️ Combate</button>
+      <button class="btn btn-warning" id="listBtn">📜 Lista</button>
+    </nav>
+  </header>
 
-  <h1 class="mb-4">🎼 DUNGEON DJ 🎲</h1>
+  <main>
+    <!-- Sons -->
+    <section class="sound-grid">
+      <h2>Botões de Som</h2>
+      <div class="btn-grid" id="buttonsContainer"></div>
+      <small>Clique em um botão para criar um player da música. Use o painel ao lado para adicionar arquivos ou links.</small>
+    </section>
 
-  <!-- Seleção de categoria -->
-  <div class="mb-4">
-    <button class="btn btn-success me-2" onclick="setCategory('ambiente')">🎶 Ambiente</button>
-    <button class="btn btn-danger me-2" onclick="setCategory('combate')">⚔️ Combate</button>
-    <button class="btn btn-warning" onclick="toggleList()">📜 Lista</button>
+    <!-- Lateral -->
+    <aside>
+      <div class="side-section">
+        <label class="file-btn" for="fileInput">📂 Adicionar Arquivo</label>
+        <input id="fileInput" type="file" accept="audio/*">
+        <div class="url-row">
+          <input id="urlInput" type="text" placeholder="Cole o link da música (https://...)">
+          <button class="btn btn-info" id="addUrlBtn">🌐 Adicionar</button>
+        </div>
+      </div>
+      <div class="side-section">
+        <h3>📜 Lista de Músicas</h3>
+        <div id="musicList"></div>
+      </div>
+      <div class="side-section dice">
+        <h3>🎲 Lançador de Dados</h3>
+        <div class="dice-row">
+          <button class="dice-btn" data-sides="4">d4</button>
+          <button class="dice-btn" data-sides="6">d6</button>
+          <button class="dice-btn" data-sides="8">d8</button>
+          <button class="dice-btn" data-sides="10">d10</button>
+          <button class="dice-btn" data-sides="12">d12</button>
+          <button class="dice-btn" data-sides="20">d20</button>
+        </div>
+        <div id="diceResult" class="dice-result"></div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Escudo -->
+  <div class="escudo">
+    <h2>🛡️ Escudo do Mestre</h2>
+    <div class="blocos" id="blocos"></div>
+    <button id="addBloco">+ Adicionar Bloco</button>
   </div>
 
-  <!-- Botões de som -->
-  <div class="d-flex flex-wrap justify-content-center" id="buttonsContainer"></div>
-
-  <!-- Controles extras -->
-  <div class="mt-4">
-    <label class="btn btn-primary add-btn">
-      📂 Adicionar Arquivo
-      <input type="file" id="fileInput" accept="audio/*" hidden onchange="loadLocalFile(event)">
-    </label>
-    <div class="input-group mb-3 mt-2 w-50 mx-auto">
-      <input type="text" id="urlInput" placeholder="Cole o link da música" class="form-control">
-      <button class="btn btn-info" onclick="loadFromURL()">🌐 Adicionar Link</button>
-    </div>
-  </div>
-
-  <!-- Lista lateral -->
-  <div id="musicListContainer">
-    <h5>📜 Lista de Músicas</h5>
-    <div id="musicList"></div>
-  </div>
-
-  <!-- 🎲 Lançador de Dados -->
-  <div class="dice-container">
-    <h3>🎲 Lançador de Dados</h3>
-    <div>
-      <button class="dice-btn" onclick="rollDice(4)">🎲 d4</button>
-      <button class="dice-btn" onclick="rollDice(6)">🎲 d6</button>
-      <button class="dice-btn" onclick="rollDice(8)">🎲 d8</button>
-      <button class="dice-btn" onclick="rollDice(10)">🎲 d10</button>
-      <button class="dice-btn" onclick="rollDice(12)">🎲 d12</button>
-      <button class="dice-btn" onclick="rollDice(20)">🎲 d20</button>
-    </div>
-    <div id="diceResult" class="dice-result"></div>
-  </div>
-  
+  <footer style="margin:20px 0;color:#777;text-align:center;font-size:12px">
+    Dungeon DJ + Escudo do Mestre — HTML unificado
+  </footer>
 
   <script>
-    let currentCategory = 'ambiente';
-    let sounds = { ambiente: [], combate: [] };
-    let buttons = [];
-    let dragSrc = null;
+    // === DJ ===
+    let currentCategory='ambiente';
+    const sounds={ambiente:[],combate:[]};
+    const buttons=[];
+    const buttonsContainer=document.getElementById('buttonsContainer');
+    const musicList=document.getElementById('musicList');
+    const fileInput=document.getElementById('fileInput');
+    const urlInput=document.getElementById('urlInput');
+    const addUrlBtn=document.getElementById('addUrlBtn');
+    const ambBtn=document.getElementById('ambBtn');
+    const combBtn=document.getElementById('combBtn');
+    const listBtn=document.getElementById('listBtn');
+    const diceResult=document.getElementById('diceResult');
 
-    // Criar 9 botões
-    const container = document.getElementById("buttonsContainer");
-    for (let i = 1; i <= 9; i++) {
-      let btn = document.createElement("button");
-      btn.className = "sound-btn";
-      btn.innerText = "Som " + i;
-      btn.onclick = () => playSound(i - 1);
-      container.appendChild(btn);
-      buttons.push(btn);
+    for(let i=1;i<=9;i++){
+      const b=document.createElement('button');
+      b.className='sound-btn';b.textContent=`Som ${i}`;
+      b.dataset.index=i-1;
+      b.onclick=()=>playSound(i-1);
+      buttonsContainer.appendChild(b);buttons.push(b);
     }
+    ambBtn.onclick=()=>setCategory('ambiente');
+    combBtn.onclick=()=>setCategory('combate');
+    listBtn.onclick=()=>{document.querySelector('aside').classList.toggle('hidden')};
 
-    function setCategory(cat) {
-      currentCategory = cat;
-      updateButtons();
-    }
+    function setCategory(cat){currentCategory=cat;updateButtons();renderList();}
+    function updateButtons(){buttons.forEach((btn,i)=>{const s=sounds[currentCategory][i];btn.textContent=s?s.name:`Som ${i+1}`})}
+    function playSound(i){const s=sounds[currentCategory][i];if(!s)return;createPlayer(s);}
+    fileInput.onchange=e=>{const f=e.target.files[0];if(f){addSound(f.name,URL.createObjectURL(f))}}
+    addUrlBtn.onclick=()=>{if(urlInput.value){addSound(urlInput.value.split('/').pop(),urlInput.value);urlInput.value=''}}
 
-    function updateButtons() {
-      buttons.forEach((btn, i) => {
-        btn.innerText = sounds[currentCategory][i]?.name || "Som " + (i + 1);
+    function addSound(name,src){if(sounds[currentCategory].length>=9)return alert("Limite atingido");sounds[currentCategory].push({name,src,category:currentCategory});updateButtons();renderList();}
+    function createPlayer(sound){
+      const card=document.createElement('article');
+      card.className='player-card '+sound.category;
+      const top=document.createElement('div');top.className='player-top';
+      const h=document.createElement('h6');h.textContent=sound.name;top.appendChild(h);
+      const audio=document.createElement('audio');audio.src=sound.src;audio.autoplay=true;
+      const controls=document.createElement('div');controls.className='player-controls';
+      ['⏯','🔇','🔁','❌'].forEach(icon=>{
+        const btn=document.createElement('button');btn.textContent=icon;
+        if(icon==='⏯')btn.onclick=()=>audio.paused?audio.play():audio.pause();
+        if(icon==='🔇')btn.onclick=()=>audio.muted=!audio.muted;
+        if(icon==='🔁')btn.onclick=()=>audio.loop=!audio.loop;
+        if(icon==='❌')btn.onclick=()=>{audio.pause();card.remove()};
+        controls.appendChild(btn);
       });
+      const vol=document.createElement('input');vol.type='range';vol.min=0;vol.max=1;vol.step=0.01;vol.value=1;vol.oninput=()=>audio.volume=vol.value;
+      controls.appendChild(vol);
+      card.append(top,controls,audio);
+      musicList.prepend(card);
     }
+    function renderList(){musicList.innerHTML='';sounds[currentCategory].forEach(s=>createPlayer(s))}
+    document.querySelectorAll('.dice-btn').forEach(b=>b.onclick=()=>{diceResult.textContent="🎲 "+(Math.floor(Math.random()*b.dataset.sides)+1)})
 
-    function playSound(index) {
-      let sound = sounds[currentCategory][index];
-      if (sound) createPlayer(sound, index);
-    }
-
-    function loadLocalFile(event) {
-      const file = event.target.files[0];
-      if (file) {
-        let url = URL.createObjectURL(file);
-        addSound(file.name, url);
-      }
-    }
-
-    function loadFromURL() {
-      const url = document.getElementById("urlInput").value;
-      if (url) {
-        addSound("Música Link", url);
-        document.getElementById("urlInput").value = "";
-      }
-    }
-
-    function addSound(name, src) {
-      if (sounds[currentCategory].length < 9) {
-        sounds[currentCategory].push({ name, src, category: currentCategory });
-        updateButtons();
-        renderList();
-      } else {
-        alert("Limite de 9 sons por categoria.");
-      }
-    }
-
-    function createPlayer(sound, index) {
-      const list = document.getElementById("musicList");
-      let card = document.createElement("div");
-      card.className = `player-card ${sound.category}`;
-      card.draggable = true;
-
-      let title = document.createElement("h6");
-      title.innerText = sound.name;
-
-      let audio = document.createElement("audio");
-      audio.src = sound.src;
-      audio.controls = false;
-      audio.autoplay = true;
-
-      let controls = document.createElement("div");
-      controls.className = "player-controls mt-2";
-
-      let playBtn = document.createElement("button");
-      playBtn.className = "btn btn-sm btn-light";
-      playBtn.innerText = "⏯";
-      playBtn.onclick = () => { audio.paused ? audio.play() : audio.pause(); };
-
-      let muteBtn = document.createElement("button");
-      muteBtn.className = "btn btn-sm btn-warning";
-      muteBtn.innerText = "🔇";
-      muteBtn.onclick = () => { audio.muted = !audio.muted; };
-
-      let loopBtn = document.createElement("button");
-      loopBtn.className = "btn btn-sm btn-info";
-      loopBtn.innerText = "🔁";
-      loopBtn.onclick = () => { audio.loop = !audio.loop; };
-
-      let removeBtn = document.createElement("button");
-      removeBtn.className = "btn btn-sm btn-danger";
-      removeBtn.innerText = "❌";
-      removeBtn.onclick = () => { card.remove(); };
-
-      let volume = document.createElement("input");
-      volume.type = "range";
-      volume.min = 0; volume.max = 1; volume.step = 0.1; volume.value = 1;
-      volume.oninput = () => { audio.volume = volume.value; };
-
-      controls.appendChild(playBtn);
-      controls.appendChild(muteBtn);
-      controls.appendChild(loopBtn);
-      controls.appendChild(removeBtn);
-      controls.appendChild(volume);
-
-      card.appendChild(title);
-      card.appendChild(controls);
-
-      card.addEventListener("dragstart", (e) => {
-        dragSrc = card;
-        card.classList.add("dragging");
-      });
-      card.addEventListener("dragend", () => {
-        card.classList.remove("dragging");
-      });
-      card.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        const dragging = document.querySelector(".dragging");
-        const container = document.getElementById("musicList");
-        const afterElement = getDragAfterElement(container, e.clientY);
-        if (afterElement == null) {
-          container.appendChild(dragging);
-        } else {
-          container.insertBefore(dragging, afterElement);
-        }
-      });
-
-      list.appendChild(card);
-    }
-
-    function getDragAfterElement(container, y) {
-      const elements = [...container.querySelectorAll(".player-card:not(.dragging)")];
-      return elements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        if (offset < 0 && offset > closest.offset) {
-          return { offset: offset, element: child };
-        } else {
-          return closest;
-        }
-      }, { offset: Number.NEGATIVE_INFINITY }).element;
-    }
-
-    function renderList() {
-      const list = document.getElementById("musicList");
-      list.innerHTML = "";
-      sounds[currentCategory].forEach((s, i) => {
-        createPlayer(s, i);
-      });
-    }
-
-    function toggleList() {
-      const list = document.getElementById("musicListContainer");
-      list.style.display = list.style.display === "none" ? "block" : "none";
-    }
-
-    // 🎲 Função de rolagem de dados
-    function rollDice(sides) {
-      const result = Math.floor(Math.random() * sides) + 1;
-      const diceResult = document.getElementById("diceResult");
-      diceResult.innerText = `🎲 Resultado: ${result}`;
-      diceResult.classList.remove("pop");
-      void diceResult.offsetWidth; // reset animação
-      diceResult.classList.add("pop");
-    }
+    // === ESCUDO ===
+    const blocos=document.getElementById("blocos");
+    document.getElementById("addBloco").onclick=()=>{
+      const bloco=document.createElement("div");bloco.className="bloco";
+      bloco.innerHTML=`<input class="titulo" placeholder="Título"><textarea></textarea>
+      <div class="controles"><select onchange="this.closest('.bloco').querySelector('textarea').style.fontFamily=this.value">
+      <option>Arial</option><option>Courier New</option><option>Georgia</option><option>Times New Roman</option></select>
+      <input type="color" onchange="this.closest('.bloco').querySelector('textarea').style.color=this.value">
+      <input type="number" value="14" min="10" max="40" onchange="this.closest('.bloco').querySelector('textarea').style.fontSize=this.value+'px'">px</div>`;
+      blocos.appendChild(bloco);
+    };
   </script>
 </body>
 </html>
